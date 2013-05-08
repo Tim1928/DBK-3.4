@@ -54,9 +54,11 @@
 #define VDD_RAW(mv) (((MV(mv) / V_STEP) - 30) | VREG_DATA)
 
 #define MAX_AXI_KHZ 192000
+#define SEMC_ACPU_MIN_UV_MV 750U
+#define SEMC_ACPU_MAX_UV_MV 1450U
 
 extern int charging_boot;
-#define LPM_LOW_CPU_CLK 245760
+#define LPM_LOW_CPU_CLK 1209600
 
 struct clock_state {
 	struct clkctl_acpu_speed	*current_speed;
@@ -90,10 +92,17 @@ static struct clock_state drv_state = { 0 };
 static struct clkctl_acpu_speed *backup_s;
 
 static struct pll pll2_tbl[] = {
-	{  42, 0, 1, 0 }, /*  806 MHz */
-	{  53, 1, 3, 0 }, /* 1024 MHz */
-	{ 125, 0, 1, 1 }, /* 1200 MHz */
-	{  73, 0, 1, 0 }, /* 1401 MHz */
+	{42, 0, 1, 0 }, 	/*  806 MHz */
+	{53, 1, 3, 0 }, 	/* 1024 MHz */
+  	{58, 1, 3, 0 },     	/* 1113 MHz */
+/*	{125,0, 1, 1 }, 	/  1200 MHz */
+	{63, 1, 3, 0 },     	/* 1209 MHz */
+  	{68, 1, 3, 0 },     	/* 1305 MHz */
+	{73, 0, 1, 0 }, 	/* 1401 MHz */
+	{78, 1, 3, 0 },		/* 1516 MHz */
+	{83, 1, 3, 0 },		/* 1612 MHz */
+	{88, 1, 3, 0 },		/* 1708 MHz */
+	{93, 1, 3, 0 },		/* 1804 MHz */
 };
 
 /* Use negative numbers for sources that can't be enabled/disabled */
@@ -131,8 +140,14 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 	 */
 	{ 1, 806400,  PLL_2, 3, 0, UINT_MAX, 1100, VDD_RAW(1100), &pll2_tbl[0]},
 	{ 1, 1024000, PLL_2, 3, 0, UINT_MAX, 1200, VDD_RAW(1200), &pll2_tbl[1]},
-	{ 1, 1200000, PLL_2, 3, 0, UINT_MAX, 1200, VDD_RAW(1200), &pll2_tbl[2]},
-	{ 1, 1401600, PLL_2, 3, 0, UINT_MAX, 1250, VDD_RAW(1250), &pll2_tbl[3]},
+	{ 1, 1113600, PLL_2, 3, 0, UINT_MAX, 1200, VDD_RAW(1200), &pll2_tbl[2]},
+	{ 1, 1209600, PLL_2, 3, 0, UINT_MAX, 1200, VDD_RAW(1200), &pll2_tbl[3]},
+	{ 1, 1305600, PLL_2, 3, 0, UINT_MAX, 1225, VDD_RAW(1225), &pll2_tbl[4]},
+	{ 1, 1401600, PLL_2, 3, 0, UINT_MAX, 1250, VDD_RAW(1250), &pll2_tbl[5]},
+	{ 1, 1516800, PLL_2, 3, 0, UINT_MAX, 1250, VDD_RAW(1250), &pll2_tbl[6]},
+	{ 1, 1612800, PLL_2, 3, 0, UINT_MAX, 1275, VDD_RAW(1275), &pll2_tbl[7]},
+	{ 0, 1708800, PLL_2, 3, 0, UINT_MAX, 1300, VDD_RAW(1300), &pll2_tbl[8]},
+	{ 0, 1804800, PLL_2, 3, 0, UINT_MAX, 1325, VDD_RAW(1325), &pll2_tbl[9]},
 	{ 0 }
 };
 
@@ -449,14 +464,17 @@ static inline void setup_cpufreq_table(void) { }
  * Truncate the frequency table at the current PLL2 rate and determine the
  * backup PLL to use when scaling PLL2.
  */
-void __devinit pll2_fixup(void)
+void __init pll2_fixup(void)
 {
 	struct clkctl_acpu_speed *speed = acpu_freq_tbl;
+
+#ifndef CONFIG_MSM_CPU_FREQ_OVERCLOCKING
 	u8 pll2_l = readl_relaxed(PLL2_L_VAL_ADDR) & 0xFF;
 
 	for ( ; speed->acpu_clk_khz; speed++) {
 		if (speed->src != PLL_2)
 			backup_s = speed;
+
 		if (speed->pll_rate && speed->pll_rate->l == pll2_l) {
 			speed++;
 			speed->acpu_clk_khz = 0;
@@ -466,12 +484,18 @@ void __devinit pll2_fixup(void)
 
 	pr_err("Unknown PLL2 lval %d\n", pll2_l);
 	BUG();
+#else
+	for ( ; speed->acpu_clk_khz; speed++) {
+		if (speed->src != PLL_2)
+			backup_s = speed;
+	}
+#endif
 }
 
 #define RPM_BYPASS_MASK	(1 << 3)
 #define PMIC_MODE_MASK	(1 << 4)
 
-static void __devinit populate_plls(void)
+static void __init populate_plls(void)
 {
 	acpuclk_sources[PLL_1] = clk_get_sys("acpu", "pll1_clk");
 	BUG_ON(IS_ERR(acpuclk_sources[PLL_1]));
@@ -479,14 +503,6 @@ static void __devinit populate_plls(void)
 	BUG_ON(IS_ERR(acpuclk_sources[PLL_2]));
 	acpuclk_sources[PLL_3] = clk_get_sys("acpu", "pll3_clk");
 	BUG_ON(IS_ERR(acpuclk_sources[PLL_3]));
-	/*
-	 * Prepare all the PLLs because we enable/disable them
-	 * from atomic context and can't always ensure they're
-	 * all prepared in non-atomic context.
-	 */
-	BUG_ON(clk_prepare(acpuclk_sources[PLL_1]));
-	BUG_ON(clk_prepare(acpuclk_sources[PLL_2]));
-	BUG_ON(clk_prepare(acpuclk_sources[PLL_3]));
 }
 
 static struct acpuclk_data acpuclk_7x30_data = {
