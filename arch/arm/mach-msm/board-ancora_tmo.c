@@ -6390,7 +6390,7 @@ extern unsigned int wlan_status();
 	defined(CONFIG_CSDIO_DEVICE_ID) && \
 	(CONFIG_CSDIO_VENDOR_ID == 0x70 && CONFIG_CSDIO_DEVICE_ID == 0x1117)
 static struct mmc_platform_data msm7x30_sdc1_data = {
-	.ocr_mask	= MMC_VDD_165_195 | MMC_VDD_27_28 | MMC_VDD_28_29,
+	.ocr_mask	= MMC_VDD_165_195 | MMC_VDD_20_21 | MMC_VDD_21_22,
 	.translate_vdd	= msm_sdcc_setup_power_mbp,
 	.mmc_bus_width  = MMC_CAP_4_BIT_DATA,
 	.status	        = mbp_status,
