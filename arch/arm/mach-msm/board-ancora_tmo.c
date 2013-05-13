@@ -1973,24 +1973,24 @@ static struct platform_device amp_i2c_gpio_device = {
 #ifdef CONFIG_MACH_ANCORA_TMO
 static struct snd_set_ampgain init_ampgain[] = {
 	[0] = {
-		.in1_gain = 2,
-		.in2_gain = 2,
+		.in1_gain = 4,
+		.in2_gain = 4,
 		.hp_att = 31,
 		.hp_gainup = 2,
 		.sp_att = 29,
 		.sp_gainup = 1,
 	},
 	[1] = { /* [HSS] headset_call, speaker_call */
-		.in1_gain = 2,
-		.in2_gain = 0,
-		.hp_att = 17,
+		.in1_gain = 4,
+		.in2_gain =2,
+		.hp_att = 31,
 		.hp_gainup = 1,
 		.sp_att = 31,
 		.sp_gainup = 0,
 	},
 	[2] = { /* [HSS] headset_speaker */
-		.in1_gain = 0,
-		.in2_gain = 1,
+		.in1_gain = 4,
+		.in2_gain = 2,
 		.hp_att = 1,
 		.hp_gainup = 0,
 		.sp_att = 30,
@@ -2000,23 +2000,23 @@ static struct snd_set_ampgain init_ampgain[] = {
 #else
 static struct snd_set_ampgain init_ampgain[] = {
 	[0] = {
-		.in1_gain = 2,
-		.in2_gain = 2,
+		.in1_gain = 4,
+		.in2_gain = 4,
 		.hp_att = 31,
 		.hp_gainup = 0,
 		.sp_att = 31,
 		.sp_gainup = 0,
 	},
 	[1] = { /* [HSS] headset_call, speaker_call */
-		.in1_gain = 2,
-		.in2_gain = 0,
+		.in1_gain = 5,
+		.in2_gain = 2,
 		.hp_att = 14,
 		.hp_gainup = 0,
 		.sp_att = 31,
 		.sp_gainup = 0,
 	},
 	[2] = { /* [HSS] headset_speaker */
-		.in1_gain = 5,
+		.in1_gain = 6,
 		.in2_gain = 0,
 		.hp_att = 5,
 		.hp_gainup = 0,
