@@ -1,0 +1,1 @@
+cmd_drivers/net/wireless/bcmdhd/dhd.ko := /opt/arm-eabi-linaro-4.6.2/bin/arm-eabi-ld -EL -r  -T /home/tim1928/android/kernel/DBK-3.4/scripts/module-common.lds --build-id  -o drivers/net/wireless/bcmdhd/dhd.ko drivers/net/wireless/bcmdhd/dhd.o drivers/net/wireless/bcmdhd/dhd.mod.o
